@@ -7,12 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; touch-action: manipulation; -webkit-user-select: none; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; touch-action: manipulation; }
         .game-card { background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; }
         .timer-bar { transition: width 1s linear; }
         .hidden { display: none !important; }
-        .shake { animation: shake 0.5s both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } }
         input { -webkit-appearance: none; border-radius: 12px; outline: none; }
     </style>
 </head>
@@ -23,8 +21,8 @@
         <div id="start-screen" class="game-card p-10 text-center">
             <h1 class="text-3xl font-bold text-blue-600 mb-6">數學時鐘挑戰</h1>
             <div class="space-y-4">
-                <button onclick="startGame('easy')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-green-500 text-white shadow-lg active:scale-95">簡單 (Easy)</button>
-                <button onclick="startGame('normal')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-blue-600 text-white shadow-lg active:scale-95">一般 (Normal)</button>
+                <button type="button" onclick="startGame('easy')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-green-500 text-white shadow-lg">簡單 (Easy)</button>
+                <button type="button" onclick="startGame('normal')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-blue-600 text-white shadow-lg">一般 (Normal)</button>
             </div>
         </div>
 
@@ -54,51 +52,54 @@
                 </div>
             </div>
 
-            <button onclick="checkAnswer()" class="w-full py-4 rounded-2xl text-xl font-bold bg-blue-600 text-white shadow-lg active:bg-blue-700">送出答案</button>
+            <button type="button" onclick="checkAnswer()" class="w-full py-4 rounded-2xl text-xl font-bold bg-blue-600 text-white shadow-lg">送出答案</button>
 
             <div id="feedback" class="hidden absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-50">
                 <div id="feedback-icon" class="text-8xl mb-4"></div>
                 <h2 id="feedback-text" class="text-3xl font-bold mb-2"></h2>
                 <p id="correct-answer-text" class="text-xl text-gray-600 mb-8"></p>
-                <button onclick="nextQuestion()" class="bg-blue-500 text-white px-16 py-4 rounded-xl text-xl font-bold">下一題</button>
+                <button type="button" onclick="nextQuestion()" class="bg-blue-500 text-white px-16 py-4 rounded-xl text-xl font-bold">下一題</button>
             </div>
         </div>
 
         <div id="result-screen" class="game-card p-8 text-center hidden">
             <h2 class="text-2xl font-bold mb-4">挑戰結束！</h2>
             <div class="text-6xl font-bold text-blue-600 mb-8"><span id="final-score">0</span> 分</div>
-            <button onclick="location.reload()" class="w-full py-4 rounded-2xl text-xl font-bold bg-gray-800 text-white">回主選單 (重新開始)</button>
+            <button type="button" onclick="window.location.reload()" class="w-full py-4 rounded-2xl text-xl font-bold bg-gray-800 text-white">再玩一次</button>
         </div>
     </div>
 
     <script>
-        let audioCtx, timerId, timeLeft, score=0, currentIdx=0, questions=[], wrongAnswers=[];
-
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
+        // 全域變數重置
+        let audioCtx = null, timerId = null, timeLeft = 15, score = 0, currentIdx = 0, questions = [];
 
         function playTone(freq, type, dur) {
             try {
-                initAudio();
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = type; osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
                 osc.connect(gain); gain.connect(audioCtx.destination);
                 osc.start(); osc.stop(audioCtx.currentTime + dur);
-            } catch(e) {}
+            } catch(e) { console.log("Audio skipped"); }
         }
 
         function startGame(mode) {
-            initAudio();
-            // 徹底重置所有變數
-            score = 0; currentIdx = 0; wrongAnswers = [];
+            console.log("Game Start: " + mode);
+            // 1. 立即隱藏開始畫面，顯示遊戲畫面
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+
+            // 2. 初始化變數
+            score = 0;
+            currentIdx = 0;
             clearInterval(timerId);
 
-            // 生成題目
+            // 3. 生成題目
             let q = [];
             for(let i=0; i<10; i++) {
                 let n1 = (mode === 'easy') ? Math.floor(Math.random()*4)+2 : Math.floor(Math.random()*8)+2;
@@ -112,9 +113,6 @@
             }
             questions = q.sort(() => Math.random() - 0.5);
 
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
             loadQuestion();
         }
 
@@ -148,7 +146,10 @@
             timerId = setInterval(() => {
                 timeLeft--;
                 updateTimerUI();
-                if(timeLeft <= 0) { clearInterval(timerId); checkAnswer(true); }
+                if(timeLeft <= 0) { 
+                    clearInterval(timerId); 
+                    checkAnswer(true); 
+                }
             }, 1000);
         }
 
@@ -160,17 +161,16 @@
         function checkAnswer(isTimeout = false) {
             clearInterval(timerId);
             const data = questions[currentIdx];
-            let isCorrect = false, uAns = "";
+            let isCorrect = false;
 
             if(!isTimeout) {
                 if(data.type === 'math') {
-                    uAns = document.getElementById('math-input').value;
+                    const uAns = document.getElementById('math-input').value;
                     isCorrect = parseInt(uAns) === data.a;
                 } else {
                     const h = parseInt(document.getElementById('clock-h').value);
                     const m = parseInt(document.getElementById('clock-m').value);
                     isCorrect = (h === data.h && m === data.m);
-                    uAns = h + ":" + (isNaN(m) ? "00" : m.toString().padStart(2,'0'));
                 }
             }
 
@@ -191,8 +191,9 @@
 
         function nextQuestion() {
             currentIdx++;
-            if(currentIdx < 20) loadQuestion();
-            else {
+            if(currentIdx < 20) {
+                loadQuestion();
+            } else {
                 document.getElementById('game-screen').classList.add('hidden');
                 document.getElementById('result-screen').classList.remove('hidden');
                 document.getElementById('final-score').innerText = score;
@@ -201,23 +202,34 @@
 
         function drawClock(h, m) {
             const canvas = document.getElementById('clock-canvas');
+            if(!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,220,220); ctx.translate(110,110);
+            
             ctx.beginPath(); ctx.arc(0,0,100,0,2*Math.PI); ctx.lineWidth=6; ctx.strokeStyle='#333'; ctx.stroke();
             ctx.fillStyle = 'white'; ctx.fill();
+            
             ctx.font = "bold 18px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle='#333';
             for(let i=1; i<=12; i++) {
                 let ang = i * Math.PI/6;
-                ctx.fillText(i, 80*Math.sin(ang), -80*Math.cos(ang));
+                ctx.fillText(i, 82*Math.sin(ang), -82*Math.cos(ang));
             }
-            drawHand(ctx, (h + m/60)*Math.PI/6, 55, 7, '#333');
-            drawHand(ctx, m*Math.PI/30, 85, 4, '#ef4444');
-            ctx.beginPath(); ctx.arc(0,0,6,0,2*Math.PI); ctx.fillStyle='#333'; ctx.fill();
-        }
+            
+            // 時針
+            ctx.save();
+            ctx.rotate((h + m/60)*Math.PI/6);
+            ctx.lineWidth=7; ctx.lineCap="round"; ctx.strokeStyle='#333';
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-55); ctx.stroke();
+            ctx.restore();
 
-        function drawHand(ctx, pos, len, wid, col) {
-            ctx.save(); ctx.beginPath(); ctx.lineWidth=wid; ctx.lineCap="round"; ctx.strokeStyle=col;
-            ctx.rotate(pos); ctx.moveTo(0,0); ctx.lineTo(0,-len); ctx.stroke(); ctx.restore();
+            // 分針
+            ctx.save();
+            ctx.rotate(m*Math.PI/30);
+            ctx.lineWidth=4; ctx.lineCap="round"; ctx.strokeStyle='#ef4444';
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-85); ctx.stroke();
+            ctx.restore();
+
+            ctx.beginPath(); ctx.arc(0,0,6,0,2*Math.PI); ctx.fillStyle='#333'; ctx.fill();
         }
     </script>
 </body>
