@@ -3,35 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>數學時鐘大挑戰：難度升級版</title>
+    <title>數學時鐘大挑戰</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; touch-action: manipulation; -webkit-user-select: none; }
-        .game-card { background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; }
-        .btn-mode { transition: all 0.2s; border: none; cursor: pointer; }
-        .btn-mode:active { transform: scale(0.95); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; touch-action: manipulation; -webkit-user-select: none; }
+        .game-card { background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 400px; }
         .timer-bar { transition: width 1s linear; }
         .hidden { display: none !important; }
-        input { -webkit-appearance: none; margin: 0; outline: none; }
+        input { outline: none; border-radius: 12px; }
+        #clock-canvas { background: #fff; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
     <div id="app" class="w-full flex justify-center">
         <div id="start-screen" class="game-card p-10 text-center">
-            <h1 class="text-3xl font-bold text-blue-600 mb-2">數學時鐘大挑戰</h1>
-            <p class="text-gray-500 mb-8">請選擇難度開始遊戲</p>
-            
+            <h1 class="text-3xl font-bold text-blue-600 mb-6">數學時鐘大挑戰</h1>
             <div class="space-y-4">
-                <button onclick="startGame('easy')" class="btn-mode w-full py-5 rounded-2xl text-2xl font-bold bg-green-500 text-white shadow-lg hover:bg-green-600">
+                <button onclick="startGame('easy')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-green-500 text-white shadow-lg active:scale-95 transition-transform">
                     Easy (簡單)
-                    <div class="text-xs font-normal opacity-80">5x9 以內 / 整點與半點</div>
+                    <div class="text-xs font-normal opacity-90">5x9 以內 / 整點與半點</div>
                 </button>
-                
-                <button onclick="startGame('normal')" class="btn-mode w-full py-5 rounded-2xl text-2xl font-bold bg-blue-500 text-white shadow-lg hover:bg-blue-600">
+                <button onclick="startGame('normal')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-blue-600 text-white shadow-lg active:scale-95 transition-transform">
                     Normal (一般)
-                    <div class="text-xs font-normal opacity-80">9x9 以內 / 5分鐘進位</div>
+                    <div class="text-xs font-normal opacity-90">9x9 以內 / 5分鐘進位</div>
                 </button>
             </div>
         </div>
@@ -43,21 +39,21 @@
 
             <div class="flex justify-between items-center mb-6 mt-4">
                 <span id="mode-tag" class="px-3 py-1 rounded-full text-xs font-bold"></span>
-                <span id="timer-text" class="font-bold text-red-600">15s</span>
-                <span class="text-gray-600 font-bold">得分: <span id="score-display" class="text-green-600">0</span></span>
+                <span id="timer-text" class="font-bold text-red-600 font-mono">15s</span>
+                <span class="text-gray-500 font-bold">得分: <span id="score-display" class="text-blue-600">0</span></span>
             </div>
 
-            <div id="question-area" class="flex flex-col items-center justify-center min-h-[280px] mb-6">
+            <div id="question-area" class="flex flex-col items-center justify-center min-h-[300px] mb-6">
                 <div id="math-ui" class="hidden text-center w-full">
                     <div class="text-7xl font-bold text-gray-800 mb-10" id="math-text"></div>
-                    <input type="number" id="math-input" inputmode="numeric" class="w-40 text-center text-4xl p-3 border-b-4 border-blue-500 bg-blue-50 rounded-lg" placeholder="?">
+                    <input type="number" id="math-input" inputmode="numeric" class="w-40 text-center text-5xl p-3 border-b-4 border-blue-500 bg-blue-50" placeholder="?">
                 </div>
                 <div id="clock-ui" class="hidden flex flex-col items-center">
-                    <canvas id="clock-canvas" width="220" height="220" class="mb-6"></canvas>
-                    <div class="flex items-center space-x-3">
-                        <input type="number" id="clock-h" inputmode="numeric" class="w-24 text-center text-3xl p-3 border-2 border-gray-200 rounded-xl" placeholder="時">
+                    <canvas id="clock-canvas" width="220" height="220"></canvas>
+                    <div class="flex items-center space-x-3 mt-6">
+                        <input type="number" id="clock-h" inputmode="numeric" class="w-20 text-center text-3xl p-3 border-2 border-gray-200" placeholder="時">
                         <span class="text-3xl font-bold">:</span>
-                        <input type="number" id="clock-m" inputmode="numeric" class="w-24 text-center text-3xl p-3 border-2 border-gray-200 rounded-xl" placeholder="分">
+                        <input type="number" id="clock-m" inputmode="numeric" class="w-20 text-center text-3xl p-3 border-2 border-gray-200" placeholder="分">
                     </div>
                 </div>
             </div>
@@ -68,31 +64,27 @@
                 <div id="feedback-icon" class="text-8xl mb-4"></div>
                 <h2 id="feedback-text" class="text-3xl font-bold mb-2"></h2>
                 <p id="correct-answer-text" class="text-xl text-gray-600 mb-8"></p>
-                <button onclick="nextQuestion()" class="bg-blue-500 text-white px-16 py-4 rounded-xl text-xl font-bold">下一題</button>
+                <button onclick="nextQuestion()" class="bg-blue-500 text-white px-16 py-4 rounded-xl text-xl font-bold shadow-md">下一題</button>
             </div>
         </div>
 
         <div id="result-screen" class="game-card p-8 text-center hidden">
             <h2 class="text-2xl font-bold mb-4">挑戰結束！</h2>
             <div class="text-6xl font-bold text-blue-600 mb-8"><span id="final-score">0</span> 分</div>
-            <div id="review-area" class="text-left mb-6 max-h-52 overflow-y-auto border-t pt-4 text-sm text-gray-600">
+            <div id="review-area" class="text-left mb-6 max-h-52 overflow-y-auto border-t pt-4 text-sm">
                 <h3 class="font-bold text-red-500 mb-2">錯題複習：</h3>
-                <ul id="wrong-list" class="space-y-2"></ul>
+                <ul id="wrong-list" class="space-y-2 text-gray-600"></ul>
             </div>
-            <button onclick="location.reload()" class="bg-gray-800 text-white w-full py-4 rounded-2xl text-xl font-bold">返回首頁</button>
+            <button onclick="location.reload()" class="bg-gray-800 text-white w-full py-4 rounded-2xl text-xl font-bold">返回主選單</button>
         </div>
     </div>
 
     <script>
-        let timerId, timeLeft, score=0, currentIdx=0, questions=[], wrongAnswers=[], currentMode='';
+        let timerId, timeLeft, score=0, currentIdx=0, questions=[], wrongAnswers=[];
 
         function startGame(mode) {
-            currentMode = mode;
             score = 0; currentIdx = 0; wrongAnswers = [];
-            const tag = document.getElementById('mode-tag');
-            tag.innerText = mode === 'easy' ? '簡單模式' : '一般模式';
-            tag.className = mode === 'easy' ? 'bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold' : 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold';
-            
+            document.getElementById('mode-tag').innerText = (mode === 'easy' ? '簡單' : '一般') + '模式';
             generateQuestions(mode);
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
@@ -101,13 +93,11 @@
 
         function generateQuestions(mode) {
             let q = [];
-            // 10題乘法
             for(let i=0; i<10; i++) {
                 let n1 = mode === 'easy' ? Math.floor(Math.random()*4)+2 : Math.floor(Math.random()*8)+2;
                 let n2 = Math.floor(Math.random()*8)+2;
                 q.push({type:'math', q:`${n1} × ${n2}`, a: n1*n2});
             }
-            // 10題時鐘
             for(let i=0; i<10; i++) {
                 let h = Math.floor(Math.random()*12)+1;
                 let m = mode === 'easy' ? (Math.random() > 0.5 ? 0 : 30) : Math.floor(Math.random()*12)*5;
@@ -134,7 +124,8 @@
                 document.getElementById('clock-ui').classList.remove('hidden');
                 document.getElementById('clock-h').value = "";
                 document.getElementById('clock-m').value = "";
-                drawClock(data.h, data.m);
+                // 延遲一點點確保 Canvas 已渲染
+                setTimeout(() => drawClock(data.h, data.m), 10);
             }
             startTimer();
         }
@@ -195,30 +186,54 @@
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
             const list = document.getElementById('wrong-list');
-            list.innerHTML = wrongAnswers.length ? "" : "<li>🌟 全對！太厲害了！</li>";
+            list.innerHTML = wrongAnswers.length ? "" : "<li>🌟 全對！你是天才！</li>";
             wrongAnswers.forEach(w => {
                 list.innerHTML += `<li class='border-b pb-1'>❌ ${w.q} <br>你的: ${w.u} | 正解: <b class='text-blue-600'>${w.a}</b></li>`;
             });
         }
 
         function drawClock(h, m) {
-            const canvas = document.getElementById('clock-canvas'); const ctx = canvas.getContext('2d');
-            ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,220,220); ctx.translate(110,110);
+            const canvas = document.getElementById('clock-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1,0,0,1,0,0);
+            ctx.clearRect(0,0,220,220);
+            ctx.translate(110,110);
+            
+            // 外圓
             ctx.beginPath(); ctx.arc(0,0,100,0,2*Math.PI); ctx.lineWidth=6; ctx.strokeStyle='#333'; ctx.stroke();
             ctx.fillStyle = 'white'; ctx.fill();
+            
+            // 刻度數字
+            ctx.font = "bold 20px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle='#333';
             for(let i=1; i<=12; i++) {
                 let ang = i * Math.PI/6;
-                ctx.font = "bold 18px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle='#333';
-                ctx.fillText(i, 80*Math.sin(ang), -80*Math.cos(ang));
+                ctx.fillText(i, 78*Math.sin(ang), -78*Math.cos(ang));
             }
-            drawHand(ctx, (h + m/60)*Math.PI/6, 55, 7, '#333');
-            drawHand(ctx, m*Math.PI/30, 85, 4, '#ef4444');
+            
+            // 時針 (黑)
+            const hourAng = (h + m/60) * Math.PI/6;
+            drawHand(ctx, hourAng, 50, 8, '#333');
+            
+            // 分針 (紅)
+            const minAng = m * Math.PI/30;
+            drawHand(ctx, minAng, 80, 5, '#ef4444');
+            
+            // 中心點
             ctx.beginPath(); ctx.arc(0,0,6,0,2*Math.PI); ctx.fillStyle='#333'; ctx.fill();
         }
 
         function drawHand(ctx, pos, len, wid, col) {
-            ctx.beginPath(); ctx.lineWidth=wid; ctx.lineCap="round"; ctx.strokeStyle=col;
-            ctx.moveTo(0,0); ctx.rotate(pos); ctx.lineTo(0,-len); ctx.stroke(); ctx.rotate(-pos);
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = wid;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = col;
+            ctx.rotate(pos);
+            ctx.moveTo(0, 5); // 稍微往後延伸一點點
+            ctx.lineTo(0, -len);
+            ctx.stroke();
+            ctx.restore();
         }
     </script>
 </body>
