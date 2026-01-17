@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小小數學家：音效修復版</title>
+    <title>小小數學家：完整修正版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -60,7 +60,7 @@
 
             <button onclick="checkAnswer()" class="btn-primary w-full py-4 rounded-2xl text-xl font-bold shadow-lg">送出答案</button>
 
-            <div id="feedback" class="hidden absolute inset-0 bg-white/fb flex flex-col items-center justify-center z-50 bg-white/95 backdrop-blur-sm">
+            <div id="feedback" class="hidden absolute inset-0 flex flex-col items-center justify-center z-50 bg-white/95 backdrop-blur-sm">
                 <div id="feedback-icon" class="text-8xl mb-4"></div>
                 <h2 id="feedback-text" class="text-3xl font-bold mb-2"></h2>
                 <p id="correct-answer-text" class="text-xl text-gray-600 mb-8"></p>
@@ -75,21 +75,16 @@
                 <h3 class="font-bold text-red-500 mb-2 italic">錯題複習：</h3>
                 <ul id="wrong-list" class="space-y-2"></ul>
             </div>
-            <button onclick="location.reload()" class="bg-green-500 text-white w-full py-4 rounded-2xl text-xl font-bold shadow-lg">重新挑戰</button>
+            <button onclick="resetToStart()" class="bg-green-500 text-white w-full py-4 rounded-2xl text-xl font-bold shadow-lg">重新挑戰</button>
         </div>
     </div>
 
     <script>
         let audioCtx, timerId, timeLeft, score=0, currentIdx=0, questions=[], wrongAnswers=[];
 
-        // 核心：音效初始化
         function initAudio() { 
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
         
         function playTone(freq, type, dur) {
@@ -97,22 +92,29 @@
                 initAudio();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.value = freq;
+                osc.type = type; osc.frequency.value = freq;
                 gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + dur);
-            } catch(e) { console.log("音效播放失敗", e); }
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur);
+            } catch(e) {}
+        }
+
+        // 徹底重置並回到開頭
+        function resetToStart() {
+            clearInterval(timerId);
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
         }
 
         function startGame(mode) {
-            initAudio(); // 玩家點擊時啟動音效環境
-            score = 0; currentIdx = 0; wrongAnswers = [];
+            initAudio();
+            score = 0; 
+            currentIdx = 0; 
+            wrongAnswers = [];
             
-            // 題目生成邏輯
+            // 生成新題目
             let q = [];
             for(let i=0; i<10; i++) {
                 let n1 = (mode === 'easy') ? Math.floor(Math.random()*4)+2 : Math.floor(Math.random()*8)+2;
@@ -137,7 +139,7 @@
             document.getElementById('feedback').classList.add('hidden');
             document.getElementById('q-current').innerText = currentIdx + 1;
             document.getElementById('score-display').innerText = score;
-            updateTimerUI(); // 載入時立即更新一次秒數顯示
+            updateTimerUI();
 
             if(data.type === 'math') {
                 document.getElementById('math-ui').classList.remove('hidden');
@@ -162,29 +164,20 @@
                 updateTimerUI();
                 if(timeLeft <= 0) { 
                     clearInterval(timerId); 
-                    playTone(150, 'sawtooth', 0.4); // 時間到音效
                     checkAnswer(true); 
                 }
             }, 1000);
         }
 
         function updateTimerUI() {
-            // 更新文字秒數與進度條
-            const timerTextElement = document.getElementById('timer-text');
-            if (timerTextElement) {
-                timerTextElement.innerText = timeLeft + "s";
-            }
-            const timerBarElement = document.getElementById('timer-bar');
-            if (timerBarElement) {
-                timerBarElement.style.width = (timeLeft / 15 * 100) + "%";
-            }
+            document.getElementById('timer-text').innerText = timeLeft + "s";
+            document.getElementById('timer-bar').style.width = (timeLeft / 15 * 100) + "%";
         }
 
         function checkAnswer(isTimeout = false) {
             clearInterval(timerId);
             const data = questions[currentIdx];
-            let isCorrect = false;
-            let uAns = "";
+            let isCorrect = false, uAns = "";
 
             if(!isTimeout) {
                 if(data.type === 'math') {
@@ -201,60 +194,24 @@
             document.getElementById('feedback').classList.remove('hidden');
             if(isCorrect) {
                 score += 10;
-                playTone(880, 'sine', 0.2); // 答對音效
+                playTone(880, 'sine', 0.2);
                 document.getElementById('feedback-icon').innerText = "🎉";
-                document.getElementById('feedback-text').innerText = "太棒了！答對了";
+                document.getElementById('feedback-text').innerText = "答對了！";
                 document.getElementById('correct-answer-text').innerText = "";
             } else {
-                playTone(200, 'square', 0.3); // 答錯音效
+                playTone(200, 'square', 0.3);
                 document.getElementById('game-screen').classList.add('shake');
                 setTimeout(() => document.getElementById('game-screen').classList.remove('shake'), 500);
                 wrongAnswers.push({q: data.type==='math'? data.q : `時鐘(${data.a})`, u: uAns, a: data.a});
                 document.getElementById('feedback-icon').innerText = "😅";
-                document.getElementById('feedback-text').innerText = isTimeout ? "時間到！" : "再接再厲！";
+                document.getElementById('feedback-text').innerText = isTimeout ? "時間到！" : "錯了喔！";
                 document.getElementById('correct-answer-text').innerText = "正確答案是：" + data.a;
             }
         }
 
         function nextQuestion() {
             currentIdx++;
-            if(currentIdx < 20) loadQuestion();
-            else showResult();
-        }
-
-        function showResult() {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('final-score').innerText = score;
-            const list = document.getElementById('wrong-list');
-            list.innerHTML = wrongAnswers.length ? "" : "<li>🌟 完美全對！你是數學小天才！</li>";
-            wrongAnswers.forEach(w => {
-                list.innerHTML += `<li class='border-b pb-1'>❌ ${w.q} <br>你填: ${w.u} | 正解: <b class='text-blue-600'>${w.a}</b></li>`;
-            });
-        }
-
-        function drawClock(h, m) {
-            const canvas = document.getElementById('clock-canvas'); 
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,220,220); ctx.translate(110,110);
-            
-            ctx.beginPath(); ctx.arc(0,0,100,0,2*Math.PI); ctx.lineWidth=6; ctx.strokeStyle='#333'; ctx.stroke();
-            ctx.fillStyle = 'white'; ctx.fill();
-            ctx.font = "bold 18px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle='#333';
-            for(let i=1; i<=12; i++) {
-                let ang = i * Math.PI/6;
-                ctx.fillText(i, 80*Math.sin(ang), -80*Math.cos(ang));
-            }
-            drawHand(ctx, (h + m/60)*Math.PI/6, 55, 7, '#333');
-            drawHand(ctx, m*Math.PI/30, 85, 4, '#ef4444');
-            ctx.beginPath(); ctx.arc(0,0,6,0,2*Math.PI); ctx.fillStyle='#333'; ctx.fill();
-        }
-
-        function drawHand(ctx, pos, len, wid, col) {
-            ctx.save();
-            ctx.beginPath(); ctx.lineWidth=wid; ctx.lineCap="round"; ctx.strokeStyle=col;
-            ctx.rotate(pos); ctx.moveTo(0,0); ctx.lineTo(0,-len); ctx.stroke();
-            ctx.restore();
-        }
-    </script
+            if(currentIdx < 20) {
+                loadQuestion();
+            } else {
+                showResult();
