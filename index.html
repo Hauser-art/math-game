@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小小數學家：難度升級版</title>
+    <title>小小數學家：音效修復版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -25,7 +25,7 @@
     <div id="app" class="w-full flex justify-center">
         <div id="start-screen" class="game-card p-10 text-center">
             <h1 class="text-3xl font-bold text-blue-600 mb-2">數學時鐘大挑戰</h1>
-            <p class="text-gray-500 mb-8 text-lg">請選擇難度開始</p>
+            <p class="text-gray-500 mb-8 text-lg">選擇難度開始挑戰</p>
             <div class="space-y-4">
                 <button onclick="startGame('easy')" class="btn-easy w-full py-5 rounded-2xl text-2xl font-bold shadow-xl">Easy (簡單)</button>
                 <button onclick="startGame('normal')" class="btn-primary w-full py-5 rounded-2xl text-2xl font-bold shadow-xl">Normal (一般)</button>
@@ -82,31 +82,45 @@
     <script>
         let audioCtx, timerId, timeLeft, score=0, currentIdx=0, questions=[], wrongAnswers=[];
 
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        // 核心：音效初始化
+        function initAudio() { 
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
         
         function playTone(freq, type, dur) {
             try {
-                initAudio(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-                osc.type = type; osc.frequency.value = freq; gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + dur);
-            } catch(e) {}
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + dur);
+            } catch(e) { console.log("音效播放失敗", e); }
         }
 
         function startGame(mode) {
-            initAudio(); score = 0; currentIdx = 0; wrongAnswers = [];
+            initAudio(); // 玩家點擊時啟動音效環境
+            score = 0; currentIdx = 0; wrongAnswers = [];
             
-            // 難度邏輯
+            // 題目生成邏輯
             let q = [];
             for(let i=0; i<10; i++) {
-                // Easy: 2-5 乘法, Normal: 2-9 乘法
                 let n1 = (mode === 'easy') ? Math.floor(Math.random()*4)+2 : Math.floor(Math.random()*8)+2;
                 let n2 = Math.floor(Math.random()*8)+2;
                 q.push({type:'math', q:`${n1} × ${n2}`, a: n1*n2});
             }
             for(let i=0; i<10; i++) {
                 let h = Math.floor(Math.random()*12)+1;
-                // Easy: 只有整點或半點, Normal: 5分鐘為單位
                 let m = (mode === 'easy') ? (Math.random() > 0.5 ? 0 : 30) : Math.floor(Math.random()*12)*5;
                 q.push({type:'clock', h:h, m:m, a:`${h}:${m.toString().padStart(2,'0')}`});
             }
@@ -123,21 +137,20 @@
             document.getElementById('feedback').classList.add('hidden');
             document.getElementById('q-current').innerText = currentIdx + 1;
             document.getElementById('score-display').innerText = score;
-            updateTimerUI();
+            updateTimerUI(); // 載入時立即更新一次秒數顯示
 
             if(data.type === 'math') {
                 document.getElementById('math-ui').classList.remove('hidden');
                 document.getElementById('clock-ui').classList.add('hidden');
                 document.getElementById('math-text').innerText = data.q;
                 document.getElementById('math-input').value = "";
-                setTimeout(() => document.getElementById('math-input').focus(), 100);
+                setTimeout(() => document.getElementById('math-input').focus(), 150);
             } else {
                 document.getElementById('math-ui').classList.add('hidden');
                 document.getElementById('clock-ui').classList.remove('hidden');
                 document.getElementById('clock-h').value = "";
                 document.getElementById('clock-m').value = "";
-                // 確保畫面渲染後再畫時鐘
-                setTimeout(() => drawClock(data.h, data.m), 10);
+                setTimeout(() => drawClock(data.h, data.m), 20);
             }
             startTimer();
         }
@@ -147,13 +160,24 @@
             timerId = setInterval(() => {
                 timeLeft--;
                 updateTimerUI();
-                if(timeLeft <= 0) { clearInterval(timerId); checkAnswer(true); }
+                if(timeLeft <= 0) { 
+                    clearInterval(timerId); 
+                    playTone(150, 'sawtooth', 0.4); // 時間到音效
+                    checkAnswer(true); 
+                }
             }, 1000);
         }
 
         function updateTimerUI() {
-            document.getElementById('timer-text').innerText = timeLeft + "s";
-            document.getElementById('timer-bar').style.width = (timeLeft / 15 * 100) + "%";
+            // 更新文字秒數與進度條
+            const timerTextElement = document.getElementById('timer-text');
+            if (timerTextElement) {
+                timerTextElement.innerText = timeLeft + "s";
+            }
+            const timerBarElement = document.getElementById('timer-bar');
+            if (timerBarElement) {
+                timerBarElement.style.width = (timeLeft / 15 * 100) + "%";
+            }
         }
 
         function checkAnswer(isTimeout = false) {
@@ -176,12 +200,13 @@
 
             document.getElementById('feedback').classList.remove('hidden');
             if(isCorrect) {
-                score += 10; playTone(880, 'sine', 0.2);
+                score += 10;
+                playTone(880, 'sine', 0.2); // 答對音效
                 document.getElementById('feedback-icon').innerText = "🎉";
                 document.getElementById('feedback-text').innerText = "太棒了！答對了";
                 document.getElementById('correct-answer-text').innerText = "";
             } else {
-                playTone(200, 'square', 0.3);
+                playTone(200, 'square', 0.3); // 答錯音效
                 document.getElementById('game-screen').classList.add('shake');
                 setTimeout(() => document.getElementById('game-screen').classList.remove('shake'), 500);
                 wrongAnswers.push({q: data.type==='math'? data.q : `時鐘(${data.a})`, u: uAns, a: data.a});
@@ -232,6 +257,4 @@
             ctx.rotate(pos); ctx.moveTo(0,0); ctx.lineTo(0,-len); ctx.stroke();
             ctx.restore();
         }
-    </script>
-</body>
-</html>
+    </script
