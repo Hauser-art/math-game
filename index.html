@@ -3,32 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小小數學家：完整修正版</title>
+    <title>數學時鐘大挑戰</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; touch-action: manipulation; -webkit-user-select: none; }
         .game-card { background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; }
-        .btn-primary { background-color: #3b82f6; color: white; transition: all 0.2s; border: none; cursor: pointer; }
-        .btn-primary:active { transform: scale(0.95); background-color: #2563eb; }
-        .btn-easy { background-color: #22c55e; color: white; transition: all 0.2s; border: none; cursor: pointer; }
-        .btn-easy:active { transform: scale(0.95); background-color: #16a34a; }
         .timer-bar { transition: width 1s linear; }
         .hidden { display: none !important; }
-        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-        input { -webkit-appearance: none; margin: 0; }
+        .shake { animation: shake 0.5s both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } }
+        input { -webkit-appearance: none; border-radius: 12px; outline: none; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
     <div id="app" class="w-full flex justify-center">
+        
         <div id="start-screen" class="game-card p-10 text-center">
-            <h1 class="text-3xl font-bold text-blue-600 mb-2">數學時鐘大挑戰</h1>
-            <p class="text-gray-500 mb-8 text-lg">選擇難度開始挑戰</p>
+            <h1 class="text-3xl font-bold text-blue-600 mb-6">數學時鐘挑戰</h1>
             <div class="space-y-4">
-                <button onclick="startGame('easy')" class="btn-easy w-full py-5 rounded-2xl text-2xl font-bold shadow-xl">Easy (簡單)</button>
-                <button onclick="startGame('normal')" class="btn-primary w-full py-5 rounded-2xl text-2xl font-bold shadow-xl">Normal (一般)</button>
+                <button onclick="startGame('easy')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-green-500 text-white shadow-lg active:scale-95">簡單 (Easy)</button>
+                <button onclick="startGame('normal')" class="w-full py-5 rounded-2xl text-2xl font-bold bg-blue-600 text-white shadow-lg active:scale-95">一般 (Normal)</button>
             </div>
         </div>
 
@@ -38,55 +34,51 @@
             </div>
 
             <div class="flex justify-between items-center mb-6 mt-4">
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">第 <span id="q-current">1</span> / 20 題</span>
-                <span id="timer-text" class="font-bold text-red-600">15s</span>
+                <span id="q-label" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">第 1 / 20 題</span>
+                <span id="timer-text" class="font-bold text-red-600 text-xl">15s</span>
                 <span class="text-gray-600 font-bold">得分: <span id="score-display" class="text-green-600">0</span></span>
             </div>
 
-            <div id="question-area" class="flex flex-col items-center justify-center min-h-[280px] mb-6">
+            <div class="flex flex-col items-center justify-center min-h-[280px] mb-6">
                 <div id="math-ui" class="hidden text-center w-full">
                     <div class="text-7xl font-bold text-gray-800 mb-10" id="math-text"></div>
-                    <input type="number" id="math-input" inputmode="numeric" class="w-40 text-center text-4xl p-3 border-b-4 border-blue-500 bg-blue-50 rounded-lg outline-none" placeholder="?">
+                    <input type="number" id="math-input" inputmode="numeric" class="w-40 text-center text-4xl p-3 border-b-4 border-blue-500 bg-blue-50" placeholder="?">
                 </div>
                 <div id="clock-ui" class="hidden flex flex-col items-center">
-                    <canvas id="clock-canvas" width="220" height="220" class="mb-6"></canvas>
+                    <canvas id="clock-canvas" width="220" height="220" class="mb-4"></canvas>
                     <div class="flex items-center space-x-3">
-                        <input type="number" id="clock-h" inputmode="numeric" class="w-24 text-center text-3xl p-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500" placeholder="時">
+                        <input type="number" id="clock-h" inputmode="numeric" class="w-20 text-center text-3xl p-2 border-2" placeholder="時">
                         <span class="text-3xl font-bold">:</span>
-                        <input type="number" id="clock-m" inputmode="numeric" class="w-24 text-center text-3xl p-3 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500" placeholder="分">
+                        <input type="number" id="clock-m" inputmode="numeric" class="w-20 text-center text-3xl p-2 border-2" placeholder="分">
                     </div>
                 </div>
             </div>
 
-            <button onclick="checkAnswer()" class="btn-primary w-full py-4 rounded-2xl text-xl font-bold shadow-lg">送出答案</button>
+            <button onclick="checkAnswer()" class="w-full py-4 rounded-2xl text-xl font-bold bg-blue-600 text-white shadow-lg active:bg-blue-700">送出答案</button>
 
-            <div id="feedback" class="hidden absolute inset-0 flex flex-col items-center justify-center z-50 bg-white/95 backdrop-blur-sm">
+            <div id="feedback" class="hidden absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-50">
                 <div id="feedback-icon" class="text-8xl mb-4"></div>
                 <h2 id="feedback-text" class="text-3xl font-bold mb-2"></h2>
                 <p id="correct-answer-text" class="text-xl text-gray-600 mb-8"></p>
-                <button onclick="nextQuestion()" class="btn-primary px-16 py-4 rounded-xl text-xl font-bold">下一題</button>
+                <button onclick="nextQuestion()" class="bg-blue-500 text-white px-16 py-4 rounded-xl text-xl font-bold">下一題</button>
             </div>
         </div>
 
         <div id="result-screen" class="game-card p-8 text-center hidden">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">挑戰結束！</h2>
+            <h2 class="text-2xl font-bold mb-4">挑戰結束！</h2>
             <div class="text-6xl font-bold text-blue-600 mb-8"><span id="final-score">0</span> 分</div>
-            <div id="review-area" class="text-left mb-6 max-h-52 overflow-y-auto border-t pt-4 text-sm text-gray-600">
-                <h3 class="font-bold text-red-500 mb-2 italic">錯題複習：</h3>
-                <ul id="wrong-list" class="space-y-2"></ul>
-            </div>
-            <button onclick="resetToStart()" class="bg-green-500 text-white w-full py-4 rounded-2xl text-xl font-bold shadow-lg">重新挑戰</button>
+            <button onclick="location.reload()" class="w-full py-4 rounded-2xl text-xl font-bold bg-gray-800 text-white">回主選單 (重新開始)</button>
         </div>
     </div>
 
     <script>
         let audioCtx, timerId, timeLeft, score=0, currentIdx=0, questions=[], wrongAnswers=[];
 
-        function initAudio() { 
+        function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
-        
+
         function playTone(freq, type, dur) {
             try {
                 initAudio();
@@ -100,35 +92,28 @@
             } catch(e) {}
         }
 
-        // 徹底重置並回到開頭
-        function resetToStart() {
-            clearInterval(timerId);
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('start-screen').classList.remove('hidden');
-        }
-
         function startGame(mode) {
             initAudio();
-            score = 0; 
-            currentIdx = 0; 
-            wrongAnswers = [];
-            
-            // 生成新題目
+            // 徹底重置所有變數
+            score = 0; currentIdx = 0; wrongAnswers = [];
+            clearInterval(timerId);
+
+            // 生成題目
             let q = [];
             for(let i=0; i<10; i++) {
                 let n1 = (mode === 'easy') ? Math.floor(Math.random()*4)+2 : Math.floor(Math.random()*8)+2;
                 let n2 = Math.floor(Math.random()*8)+2;
-                q.push({type:'math', q:`${n1} × ${n2}`, a: n1*n2});
+                q.push({type:'math', q: n1 + " × " + n2, a: n1*n2});
             }
             for(let i=0; i<10; i++) {
                 let h = Math.floor(Math.random()*12)+1;
                 let m = (mode === 'easy') ? (Math.random() > 0.5 ? 0 : 30) : Math.floor(Math.random()*12)*5;
-                q.push({type:'clock', h:h, m:m, a:`${h}:${m.toString().padStart(2,'0')}`});
+                q.push({type:'clock', h:h, m:m, a: h + ":" + m.toString().padStart(2,'0')});
             }
             questions = q.sort(() => Math.random() - 0.5);
-            
+
             document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             loadQuestion();
         }
@@ -137,23 +122,24 @@
             const data = questions[currentIdx];
             timeLeft = 15;
             document.getElementById('feedback').classList.add('hidden');
-            document.getElementById('q-current').innerText = currentIdx + 1;
+            document.getElementById('q-label').innerText = "第 " + (currentIdx + 1) + " / 20 題";
             document.getElementById('score-display').innerText = score;
-            updateTimerUI();
+            
+            document.getElementById('math-ui').classList.add('hidden');
+            document.getElementById('clock-ui').classList.add('hidden');
 
             if(data.type === 'math') {
                 document.getElementById('math-ui').classList.remove('hidden');
-                document.getElementById('clock-ui').classList.add('hidden');
                 document.getElementById('math-text').innerText = data.q;
                 document.getElementById('math-input').value = "";
-                setTimeout(() => document.getElementById('math-input').focus(), 150);
+                setTimeout(() => document.getElementById('math-input').focus(), 100);
             } else {
-                document.getElementById('math-ui').classList.add('hidden');
                 document.getElementById('clock-ui').classList.remove('hidden');
                 document.getElementById('clock-h').value = "";
                 document.getElementById('clock-m').value = "";
-                setTimeout(() => drawClock(data.h, data.m), 20);
+                setTimeout(() => drawClock(data.h, data.m), 50);
             }
+            updateTimerUI();
             startTimer();
         }
 
@@ -162,10 +148,7 @@
             timerId = setInterval(() => {
                 timeLeft--;
                 updateTimerUI();
-                if(timeLeft <= 0) { 
-                    clearInterval(timerId); 
-                    checkAnswer(true); 
-                }
+                if(timeLeft <= 0) { clearInterval(timerId); checkAnswer(true); }
             }, 1000);
         }
 
@@ -184,12 +167,12 @@
                     uAns = document.getElementById('math-input').value;
                     isCorrect = parseInt(uAns) === data.a;
                 } else {
-                    const h = document.getElementById('clock-h').value;
-                    const m = document.getElementById('clock-m').value;
-                    isCorrect = (parseInt(h) === data.h && parseInt(m) === data.m);
-                    uAns = `${h||'?'}:${m.toString().padStart(2,'0')}`;
+                    const h = parseInt(document.getElementById('clock-h').value);
+                    const m = parseInt(document.getElementById('clock-m').value);
+                    isCorrect = (h === data.h && m === data.m);
+                    uAns = h + ":" + (isNaN(m) ? "00" : m.toString().padStart(2,'0'));
                 }
-            } else { uAns = "超時"; }
+            }
 
             document.getElementById('feedback').classList.remove('hidden');
             if(isCorrect) {
@@ -200,18 +183,42 @@
                 document.getElementById('correct-answer-text').innerText = "";
             } else {
                 playTone(200, 'square', 0.3);
-                document.getElementById('game-screen').classList.add('shake');
-                setTimeout(() => document.getElementById('game-screen').classList.remove('shake'), 500);
-                wrongAnswers.push({q: data.type==='math'? data.q : `時鐘(${data.a})`, u: uAns, a: data.a});
                 document.getElementById('feedback-icon').innerText = "😅";
-                document.getElementById('feedback-text').innerText = isTimeout ? "時間到！" : "錯了喔！";
-                document.getElementById('correct-answer-text').innerText = "正確答案是：" + data.a;
+                document.getElementById('feedback-text').innerText = isTimeout ? "時間到！" : "答錯了";
+                document.getElementById('correct-answer-text').innerText = "正解：" + data.a;
             }
         }
 
         function nextQuestion() {
             currentIdx++;
-            if(currentIdx < 20) {
-                loadQuestion();
-            } else {
-                showResult();
+            if(currentIdx < 20) loadQuestion();
+            else {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                document.getElementById('final-score').innerText = score;
+            }
+        }
+
+        function drawClock(h, m) {
+            const canvas = document.getElementById('clock-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,220,220); ctx.translate(110,110);
+            ctx.beginPath(); ctx.arc(0,0,100,0,2*Math.PI); ctx.lineWidth=6; ctx.strokeStyle='#333'; ctx.stroke();
+            ctx.fillStyle = 'white'; ctx.fill();
+            ctx.font = "bold 18px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle='#333';
+            for(let i=1; i<=12; i++) {
+                let ang = i * Math.PI/6;
+                ctx.fillText(i, 80*Math.sin(ang), -80*Math.cos(ang));
+            }
+            drawHand(ctx, (h + m/60)*Math.PI/6, 55, 7, '#333');
+            drawHand(ctx, m*Math.PI/30, 85, 4, '#ef4444');
+            ctx.beginPath(); ctx.arc(0,0,6,0,2*Math.PI); ctx.fillStyle='#333'; ctx.fill();
+        }
+
+        function drawHand(ctx, pos, len, wid, col) {
+            ctx.save(); ctx.beginPath(); ctx.lineWidth=wid; ctx.lineCap="round"; ctx.strokeStyle=col;
+            ctx.rotate(pos); ctx.moveTo(0,0); ctx.lineTo(0,-len); ctx.stroke(); ctx.restore();
+        }
+    </script>
+</body>
+</html>
